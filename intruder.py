@@ -17,49 +17,113 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from inspect import cleandoc
+from pathlib import Path
 
 
-copyright_notice = """Copyright (C) 2023 Mr. Kelsey
-This program comes with ABSOLUTELY NO WARRANTY; please see license 
-for details. This is free software, and you are welcome to redistribute
-it under certain conditions; again, please see license for details."""
+class Intruder:
+    @property
+    def copyright_notice(self):
+        return """Copyright (C) 2023 Mr. Kelsey
+        This program comes with ABSOLUTELY NO WARRANTY; please see license 
+        for details. This is free software, and you are welcome to redistribute
+        it under certain conditions; again, please see license for details."""
 
+    @property
+    def tooltip(self):
+        return f"""
+        Attack Types
+        sniper - This attack places each payload into each payload position in turn. It uses a single payload set. (refined fuzzing)
+        battering-ram - This attack places the same payload into all of the defined payload positions simultaneously. It uses a single payload set. (bulk fuzzing)
+        pitchfork - This attack iterates through a different payload set for each defined position. Payloads are placed into each position simultaneously. (cred stuffing)
+        cluster-bomb - This attack iterates through a different payload set for each defined position. Payloads are placed from each set in turn, so that all payload combinations are tested. (brute force)
 
-tooltip = """
-Attack Types
--s Sniper - This attack places each payload into each payload position in turn. It uses a single payload set. (refined fuzzing)
--b Battering Ram - This attack places the same payload into all of the defined payload positions simultaneously. It uses a single payload set. (bulk fuzzing)
--p Pitchfork - This attack iterates through a different payload set for each defined position. Payloads are placed into each position simultaneously. (cred stuffing)
--c Cluster Bomb - This attack iterates through a different payload set for each defined position. Payloads are placed from each set in turn, so that all payload combinations are tested. (brute force)
+        Payload types
+        list - Simple List: requires additional parameters -p1 [-p2]
+        file - Runtime File: requires additional parameters -f
+        custom - Custom Iterator
+        sub - Character substitution
+        case - Letter Case Modification
+        grep - Recursive Grep
+        uni - Illegal Unicode
+        blocks - Character Blocks
+        num - Numbers
+        date - Dates
+        brute - Brute Forcer
+        null - Null Payloads
+        frob - Character Frobber
+        bit - Bit Flipper
+        user - Username Generator
 
-Payload types
---list Simple List - include -p1 [-p2]
--p1 Primary Payload List - needed for all attack types
--p2 Secondondary Payload List - needed with -p and -c
---file Runtime File - include -f
--f File
---custom Custom Iterator
---sub Character substitution
---case Letter Case Modification
---grep Recursive Grep
---uni Illegal Unicode
---blocks Character Blocks
---num Numbers
---date Dates
---brute Brute Forcer
---null Null Payloads
---frob Character Frobber
---bit Bit Flipper
---user Username Generator
+        Extra parameters
+        p1 - Primary Payload List: needed for all attack types when using --list payload type
+        p2 - Secondondary Payload List: needed with -p and -c when using --list payload type
+        f - File: A runtime file read line by line to provide 
 
-Settings
-## TODO ##
---settings View default settings
---create-config Tkinter user interface to create new intruder.conf file
---config Override deault settings with settings from intruder.conf
-"""
+        Settings
+        --view-tooltip - Show this very tooltip so you can see all your options
+        --view-settings - View default settings
+        --create-config - Create new intruder.conf file
+        --use-config - Override deault settings with settings from intruder.conf
+        
+        Examples:
+        {Path(__file__).name} attack sniper num ./burp.request
+        {Path(__file__).name} attack b list ./burp.request p1 ./payload.list
+        {Path(__file__).name} attack pitchfork list ./burp.request p1 ./p1.list p2 ./p2.list
+        {Path(__file__).name} config --view-settings
+        """
+    
+    def __init__(self):
+        self.config_path = None
+        self.attack_type = None
+        self.payload_type = None
+        self.request_file_Path = None
+        self.show_settings = False
+        self.create_config = False
+
+    def set_attributes_based_on_args(self, args):
+        print(args)
+    
+    def parse_request_file(self, file_path):
+        pass
+    
 
 if __name__ == "__main__":
-    print(copyright_notice)
-    print(tooltip)
+    intruder = Intruder()
+    parser = ArgumentParser(
+        description="Burp Suite Intruder Without The Rate Limiter",
+        formatter_class=RawDescriptionHelpFormatter,
+        epilog=cleandoc(intruder.copyright_notice),
+    )
+    parser.add_argument("--use-config", type=Path, help="use a custom config file to override default settings")
+    parser.add_argument("--view-tooltip", action='version', version=cleandoc(intruder.tooltip), help="Show program tooltip to see all tool options")
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
+    
+    subparsers = parser.add_subparsers()
+    
+    attack_parser = subparsers.add_parser("attack")
+    attack_parser.add_argument("attack_type", choices=["s", "sniper", "b", "battering-ram", "p", "pitchfork", "c", "cluster-bomb"],
+                               help="Select your attack type")
+    attack_parser.add_argument("payload_type", choices=["list", "file", "custom", "sub", "case", "grep", "uni",
+                                            "blocks", "num", "date", "brute", "null", "frob", "bit", "user"], help="specify your payload type")
+    attack_parser.add_argument("request_file", type=Path, help="The text file to which you saved your Burp Suite request\
+                               [example: ./burp.request]")
+    
+    attack_subparser = attack_parser.add_subparsers()
+    simple_list_parser_1 = attack_subparser.add_parser("p1", help="the list of payloads you would like to try: required for list payload type")
+    simple_list_parser_1.add_argument("p1", help="The path to your first list")
+
+    simple_list_subparser = simple_list_parser_1.add_subparsers()
+    simple_list_parser_2 = simple_list_subparser.add_parser("p2", help="your second list: required for pitchfork and cluster bomb attack types")
+    simple_list_parser_2.add_argument("p2", help="The path to your second list")
+
+    file_parser = attack_subparser.add_parser("f", help="")
+    file_parser.add_argument("f", help="")
+    
+    config_parser = subparsers.add_parser("config")
+    config_parser.add_argument("--view-settings", action='store_true', help="View default settings")
+    config_parser.add_argument("--create-config", action='store_true', help="Create a new config file to change any settings")
+
+    args = parser.parse_args()
+    intruder.set_attributes_based_on_args(args)
