@@ -78,13 +78,53 @@ class Intruder:
         self.config_path = None
         self.attack_type = None
         self.payload_type = None
-        self.request_file_Path = None
-        self.show_settings = False
+        self.request_file_path = None
+        self.first_simple_list_payload_path = None
+        self.second_simple_list_payload_path = None
+        self.runtime_file_path = None
+        self.view_settings = False
         self.create_config = False
 
     def set_attributes_based_on_args(self, args):
-        print(args)
+        try:
+            with open(Path(args.use_config)) as config:
+                self.parse_config_file(config)
+        except TypeError:
+            pass
+        except OSError:
+            raise
+
+        if hasattr(args, "attack_type"):
+            self.attack_type = args.attack_type
+        if hasattr(args, "payload_type"):
+            self.payload_type =  args.payload_type
+        if hasattr(args, "request_file"):
+            self.request_file_path = args.request_file
+        if hasattr(args, "p1"):
+            self.first_simple_list_payload_path = args.p1
+        if hasattr(args, "p2"):
+            self.second_simple_list_payload_path = args.p2
+        if hasattr(args, "f"):
+            self.runtime_file_path = args.f
+        if hasattr(args, "view_settings"):
+            if args.view_settings:
+                self.show_settings()
+        if hasattr(args, "create_config"):
+            if args.create_config:
+                self.create_new_config_file()
     
+    def wip(self, feature):
+        return f"""The **{feature}** feature has not yet been implemented into the tool.  Please feel free to implement this feature and make a pull request on the project"""
+
+    def parse_config_file(self, config):
+        print(self.wip("parse_config_file"))
+
+    def show_settings(self):
+        print(self.wip("show_settings"))
+
+    def create_new_config_file(self):
+        print(self.wip("create_new_config_file"))
+
     def parse_request_file(self, file_path):
         pass
     
